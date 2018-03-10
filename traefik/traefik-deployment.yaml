@@ -43,8 +43,10 @@ spec:
   ports:
     - protocol: TCP
       port: 80
+      nodePort: 34580  #如果不设置k8s会随机找端口
       name: web
     - protocol: TCP
       port: 8080
+      nodePort: 34581  #如果不设置k8s会随机找端口
       name: admin
   type: NodePort
