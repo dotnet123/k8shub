@@ -1,0 +1,76 @@
+---
+
+kind: Deployment #指定要创建的资源类型
+apiVersion: apps/v1beta2 #获取官方的api
+metadata:
+  name: orderservice-d #创建的deploy名字
+  namespace: ming
+spec:
+  replicas: 1 #创建的pod数量
+  selector:
+      matchLabels: # @1 要匹配的标签,与@2 要保持一致
+        app: orderservice-p
+  template:
+    metadata:
+      labels: #pod标签
+        app: orderservice-p # @2 与上面 @1 要保持一致
+    spec:
+      containers: #容器部分
+        - name: orderservice-c #容器名称
+          image: mingna123/orderservice:v1 #指定镜像
+          ports:
+            - containerPort: 8080 #容器端口 
+          #volumeMounts: #挂载共享文件
+            #- mountPath: /usr/share/nginx/html 
+              #readOnly: false 
+              #name: share-data 
+      #volumes: 
+       #- name: share-data
+         #nfs:
+           #server: 10.1.4.222 
+           #path: "/data/www-data" 
+
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orderservice-s
+  namespace: ming
+  labels:
+    app: orderservice-s
+spec:
+  #type: NodePort
+  ports:
+  - port: 8080
+    #nodePort: 30001
+    targetPort: 8080
+    protocol: TCP
+    name: my-port-name
+ 
+  selector:
+    app: orderservice-p
+
+
+---
+
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: orderservice-ing
+  namespace: kube-system
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.frontend.rule.type: PathPrefixStrip
+spec:
+  rules:
+  - host: k8s.test.com
+    http:
+      paths:
+      - path: /orderservicetest  #这里估计添加了一个test的字符  
+        backend:
+          serviceName: orderservice-s
+          servicePort: my-port-name
+  
