@@ -6,7 +6,7 @@ metadata:
   name: orderservice-d #创建的deploy名字
   namespace: ming
 spec:
-  replicas: 1 #创建的pod数量
+  replicas: 3 #创建的pod数量
   selector:
       matchLabels: # @1 要匹配的标签,与@2 要保持一致
         app: orderservice-p
@@ -29,7 +29,6 @@ spec:
          #nfs:
            #server: 10.1.4.222 
            #path: "/data/www-data" 
-
 
 
 ---
@@ -55,12 +54,11 @@ spec:
 
 ---
 
-
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: orderservice-ing
-  namespace: kube-system
+  namespace: ming
   annotations:
     kubernetes.io/ingress.class: traefik
     traefik.frontend.rule.type: PathPrefixStrip
@@ -69,7 +67,7 @@ spec:
   - host: k8s.test.com
     http:
       paths:
-      - path: /orderservicetest  #这里估计添加了一个test的字符  
+      - path: /orderservice  #路径 
         backend:
           serviceName: orderservice-s
           servicePort: my-port-name
