@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ceph-secret-admin
+type: "kubernetes.io/rbd"  
+data:
+  key: QVFEeE8waGJENzA4TkJBQVEyK3dlRlVMb3FZOElvbXRrNGRtRWc9PQ==
+
+
+---
+
+
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ceph-pv-01
+  labels:
+    cephtag: ceph-pv-01
+spec:
+  capacity:
+    storage: 100M 
+  accessModes:
+    - ReadWriteMany 
+  rbd: 
+    monitors: 
+      - 10.1.62.173:6789
+    pool: dev
+    image: paycenterimage
+    user: admin
+    secretRef:
+      name: ceph-secret-admin 
+    fsType: ext4 
+    readOnly: false
+  persistentVolumeReclaimPolicy: Retain
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ceph-pvc-01
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 60M
+  selector:
+    matchLabels:
+      cephtag: ceph-pv-01
+
+
+---
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nginx-test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    volumeMounts:
+    - mountPath: /data
+      name: mypd
+  volumes:
+  - name: mypd
+    persistentVolumeClaim:
+      claimName: ceph-pvc-01
+
+
+---
+
+kind: Deployment 
+apiVersion: apps/v1beta2 
+metadata:
+  name: nginx-deployment 
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+      matchLabels: # @1 要匹配的标签,与@2 要保持一致
+        app: podtest
+  template:
+    metadata:
+      labels: 
+        app: podtest # @2 与上面 @1 要保持一致
+    spec:
+      containers:
+        - image: nginx
+          name: nginx-test-2
+          volumeMounts:
+          - name: rbdpd
+            mountPath: /data
+      volumes:
+        - name: rbdpd
+          persistentVolumeClaim:
+            claimName: ceph-pvc-01
